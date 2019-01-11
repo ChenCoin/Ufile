@@ -7,10 +7,20 @@ import (
     "log"
     "time"
 	"os"
-    "encoding/json"
+	"encoding/json"
+	"path"
+	"path/filepath"
     "io"
     "io/ioutil"
 )
+
+func checkPath(path string) bool {
+	realPath, err := filepath.Abs(path)
+	if err != nil{
+		return false
+	}
+	return path == realPath
+}
 
 func sayhelloName(w http.ResponseWriter, r *http.Request) {
     r.ParseForm()
@@ -35,8 +45,14 @@ type FileType struct {
 
 func getDir(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	path := "." + strings.Join(r.Form["path"], "")
+	path := strings.Join(r.Form["path"], "")
 	fmt.Println("path:", path)
+	if !checkPath(path) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	path = "." + path
 
 	files, err1 := ioutil.ReadDir(path)
 	if err1 != nil {
@@ -60,14 +76,43 @@ func getDir(w http.ResponseWriter, r *http.Request){
 }
 
 func getFile(w http.ResponseWriter, r *http.Request){
+	r.ParseForm()
+	filePath := strings.Join(r.Form["path"], "")
+	fmt.Println("download:", filePath)
+	if !checkPath(filePath) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	filePath = "." + filePath
+
+	file, err := os.Open(filePath)
+    defer file.Close()
+    if err != nil {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "")
+	}
+
+	fmt.Println("download form ", file.Name())
+	w.Header().Add("Content-Disposition", "attachment; filename=" + path.Base(file.Name()))
+    w.Header().Add("Content-Type", "application/octet-stream")
+    w.Header().Add("Content-Transfer-Encoding", "binary")
+	http.ServeContent(w, r, file.Name(), time.Now(), file)
 	fmt.Fprintf(w, "file")
 }
 
 func copyFile(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	srcPath := "." + strings.Join(r.Form["old"], "")
-	dstPath := "." + strings.Join(r.Form["new"], "")
+	srcPath := strings.Join(r.Form["old"], "")
+	dstPath := strings.Join(r.Form["new"], "")
 	fmt.Println("copy form ", srcPath, " to ", dstPath)
+	if !checkPath(srcPath) || !checkPath(dstPath) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	srcPath = "." + srcPath
+	dstPath = "." + dstPath
 
 	f, err := os.Stat(srcPath)
     if err != nil {
@@ -108,9 +153,16 @@ func copyFile(w http.ResponseWriter, r *http.Request){
 
 func cutFile(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	srcPath := "." + strings.Join(r.Form["old"], "")
-	dstPath := "." + strings.Join(r.Form["new"], "")
+	srcPath := strings.Join(r.Form["old"], "")
+	dstPath := strings.Join(r.Form["new"], "")
 	fmt.Println("cut form ", srcPath, " to ", dstPath)
+	if !checkPath(srcPath) || !checkPath(dstPath) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	srcPath = "." + srcPath
+	dstPath = "." + dstPath
 
 	err := os.Rename(srcPath,dstPath)
 	if err != nil {
@@ -123,8 +175,14 @@ func cutFile(w http.ResponseWriter, r *http.Request){
 
 func deleteFile(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	path := "." + strings.Join(r.Form["path"], "")
+	path := strings.Join(r.Form["path"], "")
 	fmt.Println("delete ", path)
+	if !checkPath(path) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	path = "." + path
 
 	err := os.RemoveAll(path)
 	if err != nil {
@@ -137,9 +195,16 @@ func deleteFile(w http.ResponseWriter, r *http.Request){
 
 func renameFile(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	srcPath := "." + strings.Join(r.Form["old"], "")
-	dstPath := "." + strings.Join(r.Form["new"], "")
+	srcPath := strings.Join(r.Form["old"], "")
+	dstPath := strings.Join(r.Form["new"], "")
 	fmt.Println("rename form ", srcPath, " to ", dstPath)
+	if !checkPath(srcPath) || !checkPath(dstPath) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	srcPath = "." + srcPath
+	dstPath = "." + dstPath
 
 	err := os.Rename(srcPath,dstPath)
 	if err != nil {
@@ -156,8 +221,14 @@ func uploadFile(w http.ResponseWriter, r *http.Request){
 
 func createDir(w http.ResponseWriter, r *http.Request){
 	r.ParseForm()
-	path := "." + strings.Join(r.Form["path"], "")
+	path := strings.Join(r.Form["path"], "")
 	fmt.Println("create dir ", path)
+	if !checkPath(path) {
+		w.WriteHeader(403)
+		fmt.Fprintf(w, "")
+		return
+	}
+	path = "." + path
 
 	err := os.Mkdir(path, os.ModePerm)
 	if err != nil {
