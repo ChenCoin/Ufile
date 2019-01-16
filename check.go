@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 )
 
+// check if the path is valid, such as /../a.txt
 func check(filePath string) bool {
 	if filePath=="/" { return true }
 	path1, err := filepath.Abs("." + filePath)

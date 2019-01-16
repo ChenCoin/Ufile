@@ -7,8 +7,13 @@ import (
 	"strings"
 )
 
-func createDir(w http.ResponseWriter, r *http.Request){
-	r.ParseForm()
+func createDir(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "")
+	}
+
 	path := strings.Join(r.Form["path"], "")
 	fmt.Println("create dir ", path)
 	if !check(path) {
@@ -18,11 +23,11 @@ func createDir(w http.ResponseWriter, r *http.Request){
 	}
 	path = "." + path
 
-	err := os.Mkdir(path, os.ModePerm)
-	if err != nil {
+	err2 := os.Mkdir(path, os.ModePerm)
+	if err2 != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "")
-	}else{
+	} else {
 		fmt.Fprintf(w, "success")
 	}
 }

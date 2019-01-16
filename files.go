@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -43,6 +44,9 @@ func getDir(w http.ResponseWriter, r *http.Request){
 
 	var fileData []FileType
 	for _, f := range files {
+		if f.Name() == filepath.Base(path) {
+			continue
+		}
 		fileData = append(fileData, FileType{f.Name(), f.Size(), f.Mode(), f.ModTime(), f.IsDir()})
 	}
 

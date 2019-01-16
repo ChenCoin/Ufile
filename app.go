@@ -12,7 +12,7 @@ func index(w http.ResponseWriter, r *http.Request){
 func main() {
 	http.HandleFunc("/get/dir/", getDir)
 	http.HandleFunc("/get/file/", getFile)
-	http.HandleFunc("/put/path/", copyFile)
+	http.HandleFunc("/put/path/", copyFiles)
 	http.HandleFunc("/post/file/", cutFile)
 	http.HandleFunc("/delete/file/", deleteFile)
 	http.HandleFunc("/post/name/", renameFile)

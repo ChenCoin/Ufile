@@ -8,15 +8,14 @@ import (
 	"strings"
 )
 
-func uploadFile(w http.ResponseWriter, r *http.Request){
+func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		io.WriteString(w, "<html><head><title>上传</title></head>"+
+		_, _ = io.WriteString(w, "<html><head><title>上传</title></head>"+
 			"<body><form action='#' method=\"post\" enctype=\"multipart/form-data\">"+
 			"<label>上传图片</label>"+":"+
 			"<input type=\"file\" name='file'  /><br/><br/>    "+
 			"<label><input type=\"submit\" value=\"上传图片\"/></label></form></body></html>")
 	} else {
-		//获取文件内容 要这样获取
 		file, _, err := r.FormFile("file")
 		if err != nil {
 			w.WriteHeader(500)
@@ -24,9 +23,14 @@ func uploadFile(w http.ResponseWriter, r *http.Request){
 			return
 		}
 		defer file.Close()
-		//创建文件
 
-		r.ParseForm()
+		err2 := r.ParseForm()
+		if err2 != nil {
+			w.WriteHeader(404)
+			fmt.Fprintf(w, "")
+			return
+		}
+
 		dscPath := strings.Join(r.Form["path"], "")
 		fW, err := os.Create("." + dscPath)
 		if err != nil {

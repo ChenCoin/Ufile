@@ -7,8 +7,12 @@ import (
 	"strings"
 )
 
-func renameFile(w http.ResponseWriter, r *http.Request){
-	r.ParseForm()
+func renameFile(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(404)
+		fmt.Fprintf(w, "")
+	}
 	srcPath := strings.Join(r.Form["old"], "")
 	dstPath := strings.Join(r.Form["new"], "")
 	fmt.Println("rename form ", srcPath, " to ", dstPath)
@@ -20,11 +24,11 @@ func renameFile(w http.ResponseWriter, r *http.Request){
 	srcPath = "." + srcPath
 	dstPath = "." + dstPath
 
-	err := os.Rename(srcPath,dstPath)
-	if err != nil {
+	err2 := os.Rename(srcPath, dstPath)
+	if err2 != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "")
-	}else{
+	} else {
 		fmt.Fprintf(w, "success")
 	}
 }
