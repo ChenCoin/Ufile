@@ -15,7 +15,7 @@ func copyFile(w http.ResponseWriter, r *http.Request){
 	fmt.Println("copy form ", srcPath, " to ", dstPath)
 	if !check(srcPath) || !check(dstPath) {
 		w.WriteHeader(403)
-		fmt.Fprintf(w, "")
+		_, _ = fmt.Fprintf(w, "")
 		return
 	}
 	srcPath = "." + srcPath
