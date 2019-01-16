@@ -14,4 +14,4 @@
 # special file type
 *.app
 
-.gradle
+.idea
