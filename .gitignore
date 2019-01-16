@@ -13,3 +13,5 @@
 
 # special file type
 *.app
+
+.gradle
