@@ -12,9 +12,9 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		_, _ = io.WriteString(w, "<html><head><title>上传</title></head>"+
 			"<body><form action='#' method=\"post\" enctype=\"multipart/form-data\">"+
-			"<label>上传图片</label>"+":"+
+			"<label>上传文件</label>"+":"+
 			"<input type=\"file\" name='file'  /><br/><br/>    "+
-			"<label><input type=\"submit\" value=\"上传图片\"/></label></form></body></html>")
+			"<label><input type=\"submit\" value=\"上传文件\"/></label></form></body></html>")
 	} else {
 		file, _, err := r.FormFile("file")
 		if err != nil {
