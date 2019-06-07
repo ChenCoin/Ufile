@@ -40,9 +40,9 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		}
 		defer fW.Close()
 		
-		fmt.Println("save file : " + file.Name())
+		fmt.Println("save file : " + file.FileName())
 		_, err = io.Copy(fW, file)
-		fmt.Println("save file suc : " + file.Name())
+		fmt.Println("save file suc : " + file.FileName())
 		
 		if err != nil {
 			w.WriteHeader(500)
