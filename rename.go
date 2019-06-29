@@ -1,34 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func renameFile(w http.ResponseWriter, r *http.Request) {
+func rename(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, "")
-	}
-	srcPath := strings.Join(r.Form["old"], "")
-	dstPath := strings.Join(r.Form["new"], "")
-	fmt.Println("rename form ", srcPath, " to ", dstPath)
-	if !check(srcPath) || !check(dstPath) {
-		w.WriteHeader(403)
-		fmt.Fprintf(w, "")
+		_, _ = w.Write([]byte("404"))
+		log.Printf("rename ParseForm 404")
 		return
 	}
-	srcPath = "." + srcPath
-	dstPath = "." + dstPath
 
-	err2 := os.Rename(srcPath, dstPath)
-	if err2 != nil {
+	srcPath := r.URL.Path
+	dstPath := strings.Join(r.Form["to"], "")
+
+	if !check(srcPath) || !check(dstPath) {
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte("404"))
+		log.Printf("rename %s %s 404", srcPath, dstPath)
+		return
+	}
+
+	err = os.Rename("."+srcPath, "."+dstPath)
+	if err != nil {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, "")
+		_, _ = w.Write([]byte("500"))
+		log.Printf("rename %s %s 500", srcPath, dstPath)
 	} else {
-		fmt.Fprintf(w, "success")
+		_, _ = w.Write([]byte("success"))
+		log.Printf("rename %s %s success", srcPath, dstPath)
 	}
 }

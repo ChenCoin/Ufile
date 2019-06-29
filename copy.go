@@ -1,29 +1,31 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+// it can't be named copy due to duplicate name
 func copyFiles(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, "")
+		_, _ = w.Write([]byte("404"))
+		log.Printf("rename ParseForm 404")
 		return
 	}
 
-	srcPath := strings.Join(r.Form["old"], "")
+	srcPath := r.URL.Path
 	dstPath := strings.Join(r.Form["new"], "")
-	fmt.Println("copy form ", srcPath, " to ", dstPath)
 	if !check(srcPath) || !check(dstPath) {
-		w.WriteHeader(403)
-		_, _ = fmt.Fprintf(w, "")
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte("404"))
+		log.Printf("copy %s %s 404", srcPath, dstPath)
 		return
 	}
 	srcPath = "." + srcPath
@@ -32,7 +34,8 @@ func copyFiles(w http.ResponseWriter, r *http.Request) {
 	f, err := os.Stat(srcPath)
 	if err != nil {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, "")
+		_, _ = w.Write([]byte("500"))
+		log.Printf("copy %s %s 500", srcPath, dstPath)
 		return
 	}
 
@@ -42,30 +45,32 @@ func copyFiles(w http.ResponseWriter, r *http.Request) {
 	} else {
 		result = copyFile(srcPath, dstPath)
 	}
-	if result {
-		fmt.Fprintf(w, "success")
-	} else {
+	if !result {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, "")
+		_, _ = w.Write([]byte("500"))
+		log.Printf("copy %s %s 500", srcPath, dstPath)
+	} else {
+		_, _ = w.Write([]byte("success"))
+		log.Printf("copy %s %s success", srcPath, dstPath)
 	}
 }
 
 func copyFile(srcPath, dstPath string) bool {
 	src, err := os.Open(srcPath)
 	if err != nil {
-		fmt.Println("err1 :", err)
+		log.Printf("err : %s", err)
 		return false
 	}
 	defer src.Close()
 	dst, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		fmt.Println("err1 :", err)
+		log.Printf("err : %s", err)
 		return false
 	}
 	defer dst.Close()
-	_, err2 := io.Copy(dst, src)
-	if err2 != nil {
-		fmt.Println("err1 :", err2)
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		log.Printf("err : %s", err)
 		return false
 	}
 	return true
@@ -78,6 +83,7 @@ func copyDir(src, dst string) bool {
 	result := true
 	files, err := ioutil.ReadDir(src)
 	if err != nil {
+		log.Printf("err : %s", err)
 		return false
 	}
 	for _, f := range files {
@@ -93,7 +99,6 @@ func copyDir(src, dst string) bool {
 			result = false
 			break
 		}
-		fmt.Println(f.Name())
 	}
 	return result
 }

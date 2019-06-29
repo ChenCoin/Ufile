@@ -1,26 +1,31 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
-func index(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w, "index")
-}
-
 func main() {
-	http.HandleFunc("/get/dir/", getDir)
-	http.HandleFunc("/get/file/", getFile)
-	http.HandleFunc("/put/path/", copyFiles)
-	http.HandleFunc("/post/file/", cutFile)
-	http.HandleFunc("/delete/file/", deleteFile)
-	http.HandleFunc("/post/name/", renameFile)
+	handlerFunc("/list/", "/list", list)
+	handlerFile("/download/", "/download", "./")
 	http.HandleFunc("/put/file/", uploadFile)
-	http.HandleFunc("/put/dir/", createDir)
-	http.HandleFunc("/", index)
+	handlerFunc("/upload/", "/upload", uploadFile)
+	handlerFunc("/copy/", "/copy", copyFiles)
+	handlerFunc("/move/", "/move", move)
+	handlerFunc("/delete/", "/delete", deleteFile)
+	handlerFunc("/rename/", "/rename", rename)
+	handlerFunc("/mkdir/", "/mkdir", mkdir)
+	handlerFile("/", "", "./")
 	err := http.ListenAndServe(":8090", nil)
 	if err != nil {
-		fmt.Println("error when create server")
+		log.Printf("error when create server")
 	}
+}
+
+func handlerFunc(pattern string, prefix string, handlerFunc http.HandlerFunc) {
+	http.Handle(pattern, http.StripPrefix(prefix, handlerFunc))
+}
+
+func handlerFile(pattern string, prefix string, path string) {
+	http.Handle(pattern, http.StripPrefix(prefix, http.FileServer(http.Dir(path))))
 }

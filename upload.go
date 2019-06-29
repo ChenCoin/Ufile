@@ -1,54 +1,62 @@
 package main
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		_, _ = io.WriteString(w, "<html><head><title>上传</title></head>"+
-			"<body><form action='#' method=\"post\" enctype=\"multipart/form-data\">"+
-			"<label>上传文件</label>"+":"+
-			"<input type=\"file\" name='file'  /><br/><br/>    "+
-			"<label><input type=\"submit\" value=\"上传文件\"/></label></form></body></html>")
+		_, _ = io.WriteString(w, `
+<html>
+<head>
+    <title>upload</title>
+</head>
+<body>
+	<form enctype="multipart/form-data" action="#" method="post">
+		<input type="file" name="files" />
+		<input type="submit" value="upload" />
+	</form>
+</body>
+</html>
+`)
 	} else {
-		file, _, err := r.FormFile("file")
-		if err != nil {
-			w.WriteHeader(500)
-			fmt.Fprintf(w, "")
-			return
-		}
-		defer file.Close()
-
-		err2 := r.ParseForm()
-		if err2 != nil {
+		path := r.URL.Path
+		if !check(path) {
 			w.WriteHeader(404)
-			fmt.Fprintf(w, "")
+			_, _ = w.Write([]byte("404"))
+			log.Printf("delete %s 404", path)
 			return
 		}
 
-		dscPath := strings.Join(r.Form["path"], "")
-		fW, err := os.Create("." + dscPath)
+		err := r.ParseMultipartForm(1024000)
 		if err != nil {
-			w.WriteHeader(500)
-			fmt.Fprintf(w, "文件创建失败")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		defer fW.Close()
-		
-		fmt.Println("save file : " + file.FileName())
-		_, err = io.Copy(fW, file)
-		fmt.Println("save file suc : " + file.FileName())
-		
-		if err != nil {
-			w.WriteHeader(500)
-			fmt.Fprintf(w, "文件保存失败")
-			return
+
+		m := r.MultipartForm
+		files := m.File["files"]
+		for i, _ := range files {
+			file, err := files[i].Open()
+			defer file.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			dst, err := os.Create("." + path + "/" + files[i].Filename)
+			defer dst.Close()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if _, err := io.Copy(dst, file); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			_, _ = w.Write([]byte("success"))
 		}
-		fmt.Fprintf(w, "success")
 	}
 }

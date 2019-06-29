@@ -2,43 +2,38 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
 type FileType struct {
-	Name string `json:"name"`
-	Size int64 `json:"size"`
-	Mode os.FileMode `json:"mode"`
-	ModTime time.Time `json:"time"`
-	IsDir bool `json:"isDir"`
+	Name    string      `json:"name"`
+	Size    int64       `json:"size"`
+	Mode    os.FileMode `json:"mode"`
+	ModTime time.Time   `json:"time"`
+	IsDir   bool        `json:"isDir"`
 }
 
-func getDir(w http.ResponseWriter, r *http.Request){
-	err := r.ParseForm()
-	if err != nil {
-		w.WriteHeader(404)
-		fmt.Fprintf(w, "")
-		return
-	}
-	path := strings.Join(r.Form["path"], "")
-	fmt.Println("path:", path)
+func list(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
 	if !check(path) {
-		w.WriteHeader(403)
-		fmt.Fprintf(w, "")
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte("404"))
+		log.Printf("list %s 404", path)
 		return
 	}
+
 	path = "." + path
 
-	files, err1 := ioutil.ReadDir(path)
-	if err1 != nil {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
 		w.WriteHeader(404)
-		fmt.Fprintf(w, "")
+		_, _ = w.Write([]byte("404"))
+		log.Printf("list.ReadDir %s 404", path)
 		return
 	}
 
@@ -50,9 +45,13 @@ func getDir(w http.ResponseWriter, r *http.Request){
 		fileData = append(fileData, FileType{f.Name(), f.Size(), f.Mode(), f.ModTime(), f.IsDir()})
 	}
 
-	jsonStr, err2 := json.Marshal(fileData)
-	if err2 != nil {
+	jsonStr, err := json.Marshal(fileData)
+	if err != nil {
 		w.WriteHeader(500)
-		fmt.Fprintf(w, "")
-	} else { fmt.Fprintf(w, string(jsonStr)) }
+		_, _ = w.Write([]byte("500"))
+		log.Printf("list %s 500", path)
+	} else {
+		_, _ = w.Write([]byte(string(jsonStr)))
+		log.Printf("list %s success", path)
+	}
 }
