@@ -1,7 +1,8 @@
-# Ufile
-a file server create by golang
+# nanofs
+a file api server create by golang, used to manage file on cloud server.
 
-This is a nona cloud file server.
+It is nano, lite, beta, or with bugs.
+
 What's featrue here?
  - list files
  - download file
