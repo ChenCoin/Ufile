@@ -1,7 +1,7 @@
 # nanofs
 a file api server create by golang, used to manage file on cloud server.
 
-It is nano, lite, beta, or with bugs.
+It is nano, lite, beta, or with bugs. 
 
 What's featrue here?
  - list files
