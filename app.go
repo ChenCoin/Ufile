@@ -16,6 +16,7 @@ func main() {
 	handlerFunc("/rename/", "/rename", rename)
 	handlerFunc("/mkdir/", "/mkdir", mkdir)
 	handlerFile("/", "", "./")
+	log.Printf("server running")
 	err := http.ListenAndServe(":8090", nil)
 	if err != nil {
 		log.Printf("error when create server")

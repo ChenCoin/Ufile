@@ -14,18 +14,16 @@ import (
 func copyFiles(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		w.WriteHeader(404)
-		_, _ = w.Write([]byte("404"))
-		log.Printf("rename ParseForm 404")
+		http.Error(w, "404", http.StatusNotFound)
+		log.Printf("copy ParseForm error")
 		return
 	}
 
 	srcPath := r.URL.Path
-	dstPath := strings.Join(r.Form["new"], "")
+	dstPath := strings.Join(r.Form["to"], "")
 	if !check(srcPath) || !check(dstPath) {
-		w.WriteHeader(404)
-		_, _ = w.Write([]byte("404"))
-		log.Printf("copy %s %s 404", srcPath, dstPath)
+		http.Error(w, "404", http.StatusNotFound)
+		log.Printf("copy %s to %s: path error", srcPath, dstPath)
 		return
 	}
 	srcPath = "." + srcPath
@@ -33,70 +31,66 @@ func copyFiles(w http.ResponseWriter, r *http.Request) {
 
 	f, err := os.Stat(srcPath)
 	if err != nil {
-		w.WriteHeader(500)
-		_, _ = w.Write([]byte("500"))
-		log.Printf("copy %s %s 500", srcPath, dstPath)
+		http.Error(w, "500", http.StatusInternalServerError)
+		log.Printf("copy %s to %s: %s", srcPath, dstPath, err.Error())
 		return
 	}
 
-	result := false
+	var result string
 	if f.IsDir() {
 		result = copyDir(srcPath, dstPath)
 	} else {
 		result = copyFile(srcPath, dstPath)
 	}
-	if !result {
-		w.WriteHeader(500)
-		_, _ = w.Write([]byte("500"))
-		log.Printf("copy %s %s 500", srcPath, dstPath)
+	if result != "" {
+		http.Error(w, "500", http.StatusInternalServerError)
+		log.Printf("copy %s to %s: %s", srcPath, dstPath, result)
 	} else {
 		_, _ = w.Write([]byte("success"))
-		log.Printf("copy %s %s success", srcPath, dstPath)
+		log.Printf("copy %s to %s success", srcPath, dstPath)
 	}
 }
 
-func copyFile(srcPath, dstPath string) bool {
+func copyFile(srcPath, dstPath string) string {
 	src, err := os.Open(srcPath)
 	if err != nil {
 		log.Printf("err : %s", err)
-		return false
+		return err.Error()
 	}
 	defer src.Close()
 	dst, err := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		log.Printf("err : %s", err)
-		return false
+		return err.Error()
 	}
 	defer dst.Close()
 	_, err = io.Copy(dst, src)
 	if err != nil {
 		log.Printf("err : %s", err)
-		return false
+		return err.Error()
 	}
-	return true
+	return ""
 }
 
-func copyDir(src, dst string) bool {
+func copyDir(src, dst string) string {
 	if os.Mkdir(dst, os.ModePerm) != nil {
-		return false
+		return "mkdir error"
 	}
-	result := true
+	result := ""
 	files, err := ioutil.ReadDir(src)
 	if err != nil {
 		log.Printf("err : %s", err)
-		return false
+		return err.Error()
 	}
 	for _, f := range files {
 		if f.Name() == filepath.Base(src) {
 			continue
 		}
 		if f.IsDir() {
-			if !copyDir(src+"/"+f.Name(), dst+"/"+f.Name()) {
-				result = false
+			if result = copyDir(src+"/"+f.Name(), dst+"/"+f.Name()); result != "" {
 				break
 			}
-		} else if !copyFile(src+"/"+f.Name(), dst+"/"+f.Name()) {
-			result = false
+		} else if result = copyFile(src+"/"+f.Name(), dst+"/"+f.Name()); result != "" {
 			break
 		}
 	}
